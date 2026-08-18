@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Punto Limpio — ERP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071725;color:#eaf4f5;font-family:Inter,system-ui,-apple-system,sans-serif}
+.app{display:flex;min-height:100vh}.side{width:220px;background:#06131f;padding:22px 14px;border-right:1px solid #163042}.logo{font-size:19px;font-weight:800;margin:4px 8px 28px}.logo span{color:#19c37d}
+.nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#a8bac5;padding:12px 14px;border-radius:8px;margin:3px 0;font-size:14px;cursor:pointer}.nav button.active{background:#25c9b6;color:#fff}
+.main{flex:1;padding:30px;max-width:1250px}.top{display:flex;justify-content:space-between;align-items:center}.top h1{margin:0;font-size:27px}.muted{color:#8fa6b4;font-size:13px;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0 18px}.card,.panel{background:#0d2435;border:1px solid #183b50;border-radius:10px;padding:18px}.label{font-size:11px;color:#77a2b4;text-transform:uppercase}.value{font-size:28px;font-weight:800;margin-top:8px}.green{color:#65d76d}.warn{color:#ffcf4a}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.panel h2{font-size:17px;margin:0 0 14px}.bar{height:8px;background:#193a4c;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:94%;background:#2fc6b5}
+.alert{padding:8px 0;color:#d9e7eb;font-size:13px}.alert b{display:block;color:#fff;font-size:12px}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:11px 8px;border-bottom:1px solid #18384b;font-size:13px}.table th{color:#79a1b1;font-size:11px;text-transform:uppercase}.badge{padding:4px 8px;border-radius:99px;background:#123f3b;color:#71dfbd;font-size:11px}
+.view{display:none}.view.active{display:block}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px}.input{background:#081a28;border:1px solid #24465a;color:#fff;padding:10px 12px;border-radius:8px;width:100%}
+@media(max-width:800px){.side{width:175px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.main{padding:18px}.table{font-size:12px}}
+
+.login-screen{position:fixed;inset:0;background:#06131f;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{width:min(420px,92vw);background:#0d2435;border:1px solid #21475c;border-radius:14px;padding:28px;box-shadow:0 20px 70px #0008}
+.login-box h1{margin:0 0 6px}.login-box p{color:#8fa6b4;font-size:13px;margin:0 0 22px}
+.login-box input{display:block;width:100%;margin:8px 0 14px;background:#081a28;border:1px solid #24465a;color:#fff;padding:12px;border-radius:8px}
+.login-box button{width:100%;background:#25c9b6;border:0;color:#fff;padding:12px;border-radius:8px;font-weight:700;cursor:pointer}
+.login-msg{font-size:13px;margin-top:12px;color:#ffcf4a;min-height:18px}
+.userbox{display:flex;gap:8px;align-items:center}.logout{background:#17364a;border:1px solid #28516a;color:#c9d9df;padding:7px 10px;border-radius:7px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+<div class="login-box">
+<h1>♻️ PUNTO LIMPIO</h1>
+<p>Acceso seguro al ERP</p>
+<label class="label">Usuario / correo</label>
+<input id="loginEmail" type="text" autocomplete="username" placeholder="usuario o correo">
+<label class="label">Contraseña</label>
+<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Contraseña">
+<button id="loginBtn">Ingresar</button>
+<div id="loginMsg" class="login-msg"></div>
+</div></div><div class="app">
+<aside class="side"><div class="logo">♻️ <span>PUNTO</span> LIMPIO</div><nav class="nav">
+<button data-view="dashboard" class="active">▣ Dashboard</button><button data-view="deliveries">📦 Entregas</button><button data-view="products">🧴 Productos</button><button data-view="incomes">📥 Ingresos</button><button data-view="outcomes">📤 Salidas</button><button data-view="critical">🚦 Stock crítico</button><button data-view="centers">🏢 Centros de costo</button><button data-view="contracts">📑 Contratos</button><button data-view="acts">📄 Actas</button>
+</nav></aside>
+<main class="main">
+<div class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Control contractual e inventario</div></div><div class="userbox"><span id="userRole" class="badge">—</span><button id="logoutBtn" class="logout">Salir</button></div></div>
+
+<section id="dashboard" class="view active">
+<div class="cards"><div class="card"><div class="label">Centros de costo</div><div class="value">16</div></div><div class="card"><div class="label">Entregas del mes</div><div class="value">42</div></div><div class="card"><div class="label">Cumplimiento</div><div class="value green">94%</div></div><div class="card"><div class="label">Stock crítico</div><div class="value warn" id="criticalCount">—</div></div></div>
+<div class="grid"><div class="panel"><h2>☑️ Cumplimiento contractual</h2><div class="muted">Agosto 2026 · 94%</div><div class="bar" style="margin:14px 0"><i></i></div><div class="muted">42 entregas realizadas · 3 pendientes · 2 parciales</div></div><div class="panel"><h2>🚦 Alertas</h2><div class="alert"><b>Stock crítico</b><span id="criticalNames">Cargando…</span></div><div class="alert"><b>Entregas pendientes</b>3 entregas pendientes</div><div class="alert"><b>Entregas parciales</b>2 entregas parciales</div></div></div>
+</section>
+
+<section id="products" class="view panel"><h2>🧴 Productos</h2><div class="muted">Datos reales desde Supabase</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Código</th><th>Producto</th><th>Presentación</th><th>Unidad</th><th>Mínimo</th><th>Stock</th><th>Estado</th></tr></thead><tbody id="productsRows"><tr><td>BL110120</td><td><button onclick="showProduct(\'BL110120\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Bolsa basura 110x120</button></td><td>Negra</td><td>Unidad</td><td>80</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>BL7090</td><td><button onclick="showProduct(\'BL7090\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Bolsa basura 70x90</button></td><td>Negra</td><td>Unidad</td><td>80</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>CLG900</td><td><button onclick="showProduct(\'CLG900\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Cloro gel 900 cc</button></td><td>Botella</td><td>Unidad</td><td>30</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>DES005</td><td><button onclick="showProduct(\'DES005\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Desengrasante 5 litros</button></td><td>Bidón</td><td>Bidón</td><td>20</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>P001</td><td><button onclick="showProduct(\'P001\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Impeke Cloro Gel</button></td><td>900 ml · Limón</td><td>Unidad</td><td>20</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>JAB005</td><td><button onclick="showProduct(\'JAB005\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Jabón líquido 5 litros</button></td><td>Bidón</td><td>Bidón</td><td>25</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>PHJ001</td><td><button onclick="showProduct(\'PHJ001\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Papel higiénico jumbo</button></td><td>Rollo</td><td>Rollo</td><td>40</td><td>0</td><td><span class="badge">Crítico</span></td></tr><tr><td>TPI001</td><td><button onclick="showProduct(\'TPI001\')" style="background:none;border:0;color:#72dfc5;cursor:pointer;font:inherit;text-align:left">Toalla de papel interfoliada</button></td><td>Paquete</td><td>Paquete</td><td>25</td><td>0</td><td><span class="badge">Crítico</span></td></tr></tbody></table></div></section>
+<section id="productDetail" class="view panel"><h2>📦 Ficha de producto</h2><div id="productDetailBody" class="muted">Selecciona un producto desde Productos.</div></section>
+
+<section id="critical" class="view panel"><h2>🚦 Stock crítico</h2><div class="muted">Productos cuyo stock está bajo el mínimo configurado.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody id="criticalRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="deliveries" class="view panel"><h2>📦 Entregas</h2><div class="muted">Registro de entregas y documentos asociados.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>N°</th><th>Fecha</th><th>Estado</th><th>Acta PDF</th></tr></thead><tbody id="deliveryRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="acts" class="view panel"><h2>📄 Actas</h2><div class="muted">Actas generadas por las entregas.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>N° Acta</th><th>Recepción</th><th>Fecha</th><th>PDF</th></tr></thead><tbody id="actRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="incomes" class="view panel"><h2>📥 Ingresos</h2><p class="muted">Módulo preparado para registrar ingresos de bodega y actualizar stock.</p><div class="badge">Siguiente integración: movimientos reales</div></section>
+<section id="outcomes" class="view panel"><h2>📤 Salidas</h2><p class="muted">Módulo preparado para registrar salidas por centro de costo y contrato.</p><div class="badge">Siguiente integración: descuento automático de stock</div></section>
+<section id="centers" class="view panel"><h2>🏢 Centros de costo</h2><p class="muted">Módulo preparado para administrar centros de costo y cantidades contractuales.</p></section>
+<section id="contracts" class="view panel"><h2>📑 Contratos</h2><p class="muted">Módulo preparado para contratos, productos comprometidos y cumplimiento.</p></section>
+</main></div>
+
+<script>
+/* ERP PUNTO LIMPIO — acceso corregido */
+const labels={dashboard:"Dashboard",deliveries:"Entregas",products:"Productos",incomes:"Ingresos",outcomes:"Salidas",critical:"Stock crítico",centers:"Centros de costo",contracts:"Contratos",acts:"Actas"};
+
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  const target=document.getElementById(b.dataset.view);
+  if(target) target.classList.add("active");
+  document.getElementById("title").textContent=labels[b.dataset.view]||"ERP";
+}));
+
+const URL="https://mgevgpfwwonbcacrhwvr.supabase.co";
+const KEY="sb_publishable_4b5_lGpJJVPDbwMdT3QRdA_cwoWvtnz";
+let db=null;
+
+function msg(t){
+  const e=document.getElementById("loginMsg");
+  if(e)e.textContent=t||"";
+}
+
+function initDB(){
+  if(!window.supabase)return false;
+  try{
+    db=window.supabase.createClient(URL,KEY);
+    return true;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+async function authenticate(){
+  const email=document.getElementById("loginEmail").value.trim();
+  const password=document.getElementById("loginPassword").value;
+  const btn=document.getElementById("loginBtn");
+
+  if(!email||!password){msg("Ingresa usuario y contraseña.");return;}
+  if(!db && !initDB()){msg("No se pudo cargar el sistema. Revisa tu conexión.");return;}
+
+  btn.disabled=true;
+  btn.textContent="Ingresando…";
+  msg("Verificando…");
+
+  try{
+    if(!email.includes("@")){
+      const {data,error}=await db.from("app_users")
+        .select("username,active")
+        .eq("username",email).maybeSingle();
+      if(error||!data)msg("Usuario no encontrado.");
+      else if(!data.active)msg("Usuario inactivo.");
+      else msg("Para ingresar usa el correo asociado a este usuario.");
+      return;
+    }
+
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error){msg("Correo o contraseña incorrectos.");return;}
+
+    const {data:profile,error:pe}=await db.from("app_users")
+      .select("id,username,display_name,role,active")
+      .eq("id",data.user.id).maybeSingle();
+
+    if(pe||!profile||!profile.active){
+      await db.auth.signOut();
+      msg("El usuario no tiene un perfil ERP activo.");
+      return;
+    }
+
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("userRole").textContent=(profile.display_name||profile.username)+" · "+(profile.role||"usuario");
+    msg("");
+    await load();
+  }catch(e){
+    console.error(e);
+    msg("No se pudo conectar con el sistema. Inténtalo nuevamente.");
+  }finally{
+    btn.disabled=false;
+    btn.textContent="Ingresar";
+  }
+}
+
+async function restoreSession(){
+  if(!db)return;
+  try{
+    const {data}=await db.auth.getSession();
+    if(!data.session)return;
+
+    const {data:profile}=await db.from("app_users")
+      .select("id,username,display_name,role,active")
+      .eq("id",data.session.user.id).maybeSingle();
+
+    if(profile?.active){
+      document.getElementById("loginScreen").style.display="none";
+      document.getElementById("userRole").textContent=(profile.display_name||profile.username)+" · "+(profile.role||"usuario");
+      await load();
+    }else{
+      await db.auth.signOut();
+    }
+  }catch(e){console.error(e);}
+}
+
+async function load(){
+  if(!db)return;
+  try{
+    const {data:p,error:pe}=await db.from("products")
+      .select("id,code,name,presentation,unit,min_stock,active").order("name");
+    const pr=document.getElementById("productsRows");
+    if(pe)pr.innerHTML=`<tr><td colspan="7">No se pudieron cargar productos.</td></tr>`;
+    else pr.innerHTML=(p||[]).map(x=>`<tr><td>${x.code||""}</td><td>${x.name||""}</td><td>${x.presentation||""}</td><td>${x.unit||""}</td><td>${x.min_stock??0}</td><td>—</td><td><span class="badge">${x.active?"Activo":"Inactivo"}</span></td></tr>`).join("")||`<tr><td colspan="7">Sin productos registrados.</td></tr>`;
+
+    const {data:s,error:se}=await db.from("product_stock")
+      .select("product_id,code,name,unit,min_stock,stock").order("name");
+    const cr=document.getElementById("criticalRows");
+    if(se)cr.innerHTML=`<tr><td colspan="4">No se pudo cargar stock.</td></tr>`;
+    else{
+      const rows=s||[], critical=rows.filter(x=>(x.stock??0)<(x.min_stock??0));
+      document.getElementById("criticalCount").textContent=critical.length;
+      document.getElementById("criticalNames").textContent=critical.length?critical.map(x=>x.name).join(" · "):"Sin productos críticos";
+      cr.innerHTML=(critical.length?critical:rows).map(x=>`<tr><td>${x.name||""}</td><td>${x.stock??0}</td><td>${x.min_stock??0}</td><td><span class="badge">${(x.stock??0)<(x.min_stock??0)?"Crítico":"OK"}</span></td></tr>`).join("")||`<tr><td colspan="4">Sin registros.</td></tr>`;
+    }
+
+    const {data:d,error:de}=await db.from("deliveries").select("number,delivery_date,status,id").order("delivery_date",{ascending:false}).limit(20);
+    document.getElementById("deliveryRows").innerHTML=de?`<tr><td colspan="4">No se pudieron cargar entregas.</td></tr>`:(d||[]).map(x=>`<tr><td>${x.number||""}</td><td>${x.delivery_date||""}</td><td>${x.status||""}</td><td>—</td></tr>`).join("")||`<tr><td colspan="4">Sin entregas registradas.</td></tr>`;
+
+    const {data:a,error:ae}=await db.from("delivery_acts").select("act_number,receiver_name,issued_at,pdf_path").order("issued_at",{ascending:false}).limit(20);
+    document.getElementById("actRows").innerHTML=ae?`<tr><td colspan="4">No se pudieron cargar actas.</td></tr>`:(a||[]).map(x=>`<tr><td>${x.act_number||""}</td><td>${x.receiver_name||""}</td><td>${x.issued_at?new Date(x.issued_at).toLocaleDateString("es-CL"):""}</td><td>${x.pdf_path?`<a href="${x.pdf_path}" target="_blank" style="color:#6ee7c6">Abrir PDF</a>`:"—"}</td></tr>`).join("")||`<tr><td colspan="4">Sin actas registradas.</td></tr>`;
+  }catch(e){console.error(e);}
+}
+
+document.getElementById("loginBtn").addEventListener("click",authenticate);
+document.getElementById("logoutBtn").addEventListener("click",async()=>{if(db)await db.auth.signOut();location.reload();});
+document.getElementById("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")authenticate();});
+
+function boot(){
+  if(initDB())restoreSession();
+  else{
+    msg("Cargando sistema…");
+    setTimeout(boot,1000);
+  }
+}
+window.addEventListener("load",boot);
+</script>
+</body></html>
