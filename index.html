@@ -1,61 +1,86 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Punto Limpio — ERP</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#071725;color:#eaf4f5;font-family:Inter,system-ui,-apple-system,sans-serif}
-.app{display:flex;min-height:100vh}.side{width:220px;background:#06131f;padding:22px 14px;border-right:1px solid #163042}
-.logo{font-size:19px;font-weight:800;margin:4px 8px 28px;color:#fff}.logo span{color:#19c37d}
-.nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#a8bac5;padding:12px 14px;border-radius:8px;margin:3px 0;font-size:14px}.nav button.active{background:#25c9b6;color:#fff}
+.app{display:flex;min-height:100vh}.side{width:220px;background:#06131f;padding:22px 14px;border-right:1px solid #163042}.logo{font-size:19px;font-weight:800;margin:4px 8px 28px}.logo span{color:#19c37d}
+.nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#a8bac5;padding:12px 14px;border-radius:8px;margin:3px 0;font-size:14px;cursor:pointer}.nav button.active{background:#25c9b6;color:#fff}
 .main{flex:1;padding:30px;max-width:1250px}.top{display:flex;justify-content:space-between;align-items:center}.top h1{margin:0;font-size:27px}.muted{color:#8fa6b4;font-size:13px;margin-top:4px}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0 18px}.card,.panel{background:#0d2435;border:1px solid #183b50;border-radius:10px;padding:18px}.label{font-size:11px;color:#77a2b4;text-transform:uppercase}.value{font-size:28px;font-weight:800;margin-top:8px}.green{color:#65d76d}.warn{color:#ffcf4a}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.panel h2{font-size:17px;margin:0 0 14px}.bar{height:8px;background:#193a4c;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:94%;background:#2fc6b5}
 .alert{padding:8px 0;color:#d9e7eb;font-size:13px}.alert b{display:block;color:#fff;font-size:12px}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:11px 8px;border-bottom:1px solid #18384b;font-size:13px}.table th{color:#79a1b1;font-size:11px;text-transform:uppercase}.badge{padding:4px 8px;border-radius:99px;background:#123f3b;color:#71dfbd;font-size:11px}
-@media(max-width:800px){.side{width:170px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.main{padding:18px}}
+.view{display:none}.view.active{display:block}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px}.input{background:#081a28;border:1px solid #24465a;color:#fff;padding:10px 12px;border-radius:8px;width:100%}
+@media(max-width:800px){.side{width:175px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.main{padding:18px}.table{font-size:12px}}
 </style>
 </head>
 <body>
 <div class="app">
-<aside class="side">
-  <div class="logo">♻️ <span>PUNTO</span> LIMPIO</div>
-  <nav class="nav">
-    <button class="active">▣ Dashboard</button><button>📦 Entregas</button><button id="productsBtn">🧴 Productos</button>
-    <button>📥 Ingresos</button><button>📤 Salidas</button><button>🚦 Stock crítico</button><button>🏢 Centros de costo</button><button>📑 Contratos</button><button>📄 Actas</button>
-  </nav>
-</aside>
+<aside class="side"><div class="logo">♻️ <span>PUNTO</span> LIMPIO</div><nav class="nav">
+<button data-view="dashboard" class="active">▣ Dashboard</button><button data-view="deliveries">📦 Entregas</button><button data-view="products">🧴 Productos</button><button data-view="incomes">📥 Ingresos</button><button data-view="outcomes">📤 Salidas</button><button data-view="critical">🚦 Stock crítico</button><button data-view="centers">🏢 Centros de costo</button><button data-view="contracts">📑 Contratos</button><button data-view="acts">📄 Actas</button>
+</nav></aside>
 <main class="main">
-  <div class="top"><div><h1>Dashboard</h1><div class="muted">Control contractual e inventario</div></div><div class="badge">👑 Administrador</div></div>
-  <section class="cards">
-    <div class="card"><div class="label">Centros de costo</div><div class="value">16</div></div>
-    <div class="card"><div class="label">Entregas del mes</div><div class="value">42</div></div>
-    <div class="card"><div class="label">Cumplimiento</div><div class="value green">94%</div></div>
-    <div class="card"><div class="label">Stock crítico</div><div class="value warn" id="criticalCount">—</div></div>
-  </section>
-  <section class="grid">
-    <div class="panel"><h2>☑️ Cumplimiento contractual</h2><div class="muted">Agosto 2026 · 94%</div><div class="bar" style="margin:14px 0"><i></i></div><div class="muted">42 entregas realizadas · 3 pendientes · 2 parciales</div></div>
-    <div class="panel"><h2>🚦 Alertas</h2><div class="alert"><b>Stock crítico</b><span id="criticalNames">Cargando…</span></div><div class="alert"><b>Entregas pendientes</b>3 entregas pendientes</div><div class="alert"><b>Entregas parciales</b>2 entregas parciales</div></div>
-  </section>
-  <section class="panel" id="productsPanel" style="margin-top:16px">
-    <h2>🧴 Productos · datos reales</h2><div class="muted" style="margin-bottom:12px">Conectado a Supabase</div>
-    <table class="table"><thead><tr><th>Código</th><th>Producto</th><th>Presentación</th><th>Unidad</th><th>Stock mínimo</th><th>Estado</th></tr></thead><tbody id="products"><tr><td colspan="6">Cargando productos…</td></tr></tbody></table>
-  </section>
+<div class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Control contractual e inventario</div></div><div class="badge">👑 Administrador</div></div>
+
+<section id="dashboard" class="view active">
+<div class="cards"><div class="card"><div class="label">Centros de costo</div><div class="value">16</div></div><div class="card"><div class="label">Entregas del mes</div><div class="value">42</div></div><div class="card"><div class="label">Cumplimiento</div><div class="value green">94%</div></div><div class="card"><div class="label">Stock crítico</div><div class="value warn" id="criticalCount">—</div></div></div>
+<div class="grid"><div class="panel"><h2>☑️ Cumplimiento contractual</h2><div class="muted">Agosto 2026 · 94%</div><div class="bar" style="margin:14px 0"><i></i></div><div class="muted">42 entregas realizadas · 3 pendientes · 2 parciales</div></div><div class="panel"><h2>🚦 Alertas</h2><div class="alert"><b>Stock crítico</b><span id="criticalNames">Cargando…</span></div><div class="alert"><b>Entregas pendientes</b>3 entregas pendientes</div><div class="alert"><b>Entregas parciales</b>2 entregas parciales</div></div></div>
+</section>
+
+<section id="products" class="view panel"><h2>🧴 Productos</h2><div class="muted">Datos reales desde Supabase</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Código</th><th>Producto</th><th>Presentación</th><th>Unidad</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody id="productsRows"><tr><td colspan="6">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="critical" class="view panel"><h2>🚦 Stock crítico</h2><div class="muted">Productos cuyo stock está bajo el mínimo configurado.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody id="criticalRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="deliveries" class="view panel"><h2>📦 Entregas</h2><div class="muted">Registro de entregas y documentos asociados.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>N°</th><th>Fecha</th><th>Estado</th><th>Acta PDF</th></tr></thead><tbody id="deliveryRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="acts" class="view panel"><h2>📄 Actas</h2><div class="muted">Actas generadas por las entregas.</div><div style="overflow:auto;margin-top:14px"><table class="table"><thead><tr><th>N° Acta</th><th>Recepción</th><th>Fecha</th><th>PDF</th></tr></thead><tbody id="actRows"><tr><td colspan="4">Cargando…</td></tr></tbody></table></div></section>
+
+<section id="incomes" class="view panel"><h2>📥 Ingresos</h2><p class="muted">Módulo preparado para registrar ingresos de bodega y actualizar stock.</p><div class="badge">Siguiente integración: movimientos reales</div></section>
+<section id="outcomes" class="view panel"><h2>📤 Salidas</h2><p class="muted">Módulo preparado para registrar salidas por centro de costo y contrato.</p><div class="badge">Siguiente integración: descuento automático de stock</div></section>
+<section id="centers" class="view panel"><h2>🏢 Centros de costo</h2><p class="muted">Módulo preparado para administrar centros de costo y cantidades contractuales.</p></section>
+<section id="contracts" class="view panel"><h2>📑 Contratos</h2><p class="muted">Módulo preparado para contratos, productos comprometidos y cumplimiento.</p></section>
 </main></div>
+
 <script>
-const SUPABASE_URL="https://mgevgpfwwonbcacrhwvr.supabase.co";
-const SUPABASE_KEY="sb_publishable_4b5_lGpJJVPDbwMdT3QRdA_cwoWvtnz";
-const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const URL="https://mgevgpfwwonbcacrhwvr.supabase.co";
+const KEY="sb_publishable_4b5_lGpJJVPDbwMdT3QRdA_cwoWvtnz";
+const db=supabase.createClient(URL,KEY);
+
+const labels={dashboard:"Dashboard",deliveries:"Entregas",products:"Productos",incomes:"Ingresos",outcomes:"Salidas",critical:"Stock crítico",centers:"Centros de costo",contracts:"Contratos",acts:"Actas"};
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+ document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+ document.getElementById(b.dataset.view).classList.add("active");
+ document.getElementById("title").textContent=labels[b.dataset.view];
+});
+
 async function load(){
- const {data,error}=await db.from("products").select("code,name,presentation,unit,min_stock,active").order("name");
- const el=document.getElementById("products");
- if(error){el.innerHTML=`<tr><td colspan="6">Error al cargar: ${error.message}</td></tr>`;return}
- el.innerHTML=data.map(p=>`<tr><td>${p.code||""}</td><td>${p.name||""}</td><td>${p.presentation||""}</td><td>${p.unit||""}</td><td>${p.min_stock??0}</td><td><span class="badge">${p.active?"Activo":"Inactivo"}</span></td></tr>`).join("");
- document.getElementById("criticalCount").textContent="—";
- document.getElementById("criticalNames").textContent="Los mínimos están configurados; el stock físico se conectará en el siguiente bloque.";
+ const {data:p,error:pe}=await db.from("products").select("id,code,name,presentation,unit,min_stock,active").order("name");
+ const pr=document.getElementById("productsRows");
+ if(pe){pr.innerHTML=`<tr><td colspan="6">No se pudieron cargar productos: ${pe.message}</td></tr>`}else{
+  pr.innerHTML=p.map(x=>`<tr><td>${x.code||""}</td><td>${x.name||""}</td><td>${x.presentation||""}</td><td>${x.unit||""}</td><td>${x.min_stock??0}</td><td><span class="badge">${x.active?"Activo":"Inactivo"}</span></td></tr>`).join("");
+ }
+ const {data:s,error:se}=await db.from("product_stock").select("product_id,code,name,unit,min_stock,stock").order("name");
+ const cr=document.getElementById("criticalRows");
+ if(se){cr.innerHTML=`<tr><td colspan="4">No se pudo cargar stock: ${se.message}</td></tr>`}
+ else{
+  const critical=s.filter(x=>(x.stock??0)<(x.min_stock??0));
+  document.getElementById("criticalCount").textContent=critical.length;
+  document.getElementById("criticalNames").textContent=critical.length?critical.map(x=>x.name).join(" · "):"Sin productos críticos";
+  cr.innerHTML=(critical.length?critical:s).map(x=>`<tr><td>${x.name}</td><td>${x.stock??0}</td><td>${x.min_stock??0}</td><td><span class="badge">${(x.stock??0)<(x.min_stock??0)?"Crítico":"OK"}</span></td></tr>`).join("");
+ }
+ const {data:d,error:de}=await db.from("deliveries").select("number,delivery_date,status,id").order("delivery_date",{ascending:false}).limit(20);
+ const dr=document.getElementById("deliveryRows");
+ if(de) dr.innerHTML=`<tr><td colspan="4">No se pudieron cargar entregas: ${de.message}</td></tr>`;
+ else dr.innerHTML=d.map(x=>`<tr><td>${x.number}</td><td>${x.delivery_date||""}</td><td>${x.status||""}</td><td>—</td></tr>`).join("")||`<tr><td colspan="4">Sin entregas registradas.</td></tr>`;
+
+ const {data:a,error:ae}=await db.from("delivery_acts").select("act_number,receiver_name,issued_at,pdf_path").order("issued_at",{ascending:false}).limit(20);
+ const ar=document.getElementById("actRows");
+ if(ae) ar.innerHTML=`<tr><td colspan="4">No se pudieron cargar actas: ${ae.message}</td></tr>`;
+ else ar.innerHTML=a.map(x=>`<tr><td>${x.act_number}</td><td>${x.receiver_name||""}</td><td>${x.issued_at?new Date(x.issued_at).toLocaleDateString("es-CL"):""}</td><td>${x.pdf_path?`<a href="${x.pdf_path}" target="_blank" style="color:#6ee7c6">Abrir PDF</a>`:"—"}</td></tr>`).join("")||`<tr><td colspan="4">Sin actas registradas.</td></tr>`;
 }
 load();
-document.getElementById("productsBtn").onclick=()=>document.getElementById("productsPanel").scrollIntoView({behavior:"smooth"});
 </script>
 </body></html>
