@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Punto Limpio — ERP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071725;color:#eaf4f5;font-family:Inter,system-ui,-apple-system,sans-serif}
+.app{display:flex;min-height:100vh}.side{width:220px;background:#06131f;padding:22px 14px;border-right:1px solid #163042}
+.logo{font-size:19px;font-weight:800;margin:4px 8px 28px;color:#fff}.logo span{color:#19c37d}
+.nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#a8bac5;padding:12px 14px;border-radius:8px;margin:3px 0;font-size:14px}.nav button.active{background:#25c9b6;color:#fff}
+.main{flex:1;padding:30px;max-width:1250px}.top{display:flex;justify-content:space-between;align-items:center}.top h1{margin:0;font-size:27px}.muted{color:#8fa6b4;font-size:13px;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0 18px}.card,.panel{background:#0d2435;border:1px solid #183b50;border-radius:10px;padding:18px}.label{font-size:11px;color:#77a2b4;text-transform:uppercase}.value{font-size:28px;font-weight:800;margin-top:8px}.green{color:#65d76d}.warn{color:#ffcf4a}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.panel h2{font-size:17px;margin:0 0 14px}.bar{height:8px;background:#193a4c;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:94%;background:#2fc6b5}
+.alert{padding:8px 0;color:#d9e7eb;font-size:13px}.alert b{display:block;color:#fff;font-size:12px}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:11px 8px;border-bottom:1px solid #18384b;font-size:13px}.table th{color:#79a1b1;font-size:11px;text-transform:uppercase}.badge{padding:4px 8px;border-radius:99px;background:#123f3b;color:#71dfbd;font-size:11px}
+@media(max-width:800px){.side{width:170px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.main{padding:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="logo">♻️ <span>PUNTO</span> LIMPIO</div>
+  <nav class="nav">
+    <button class="active">▣ Dashboard</button><button>📦 Entregas</button><button id="productsBtn">🧴 Productos</button>
+    <button>📥 Ingresos</button><button>📤 Salidas</button><button>🚦 Stock crítico</button><button>🏢 Centros de costo</button><button>📑 Contratos</button><button>📄 Actas</button>
+  </nav>
+</aside>
+<main class="main">
+  <div class="top"><div><h1>Dashboard</h1><div class="muted">Control contractual e inventario</div></div><div class="badge">👑 Administrador</div></div>
+  <section class="cards">
+    <div class="card"><div class="label">Centros de costo</div><div class="value">16</div></div>
+    <div class="card"><div class="label">Entregas del mes</div><div class="value">42</div></div>
+    <div class="card"><div class="label">Cumplimiento</div><div class="value green">94%</div></div>
+    <div class="card"><div class="label">Stock crítico</div><div class="value warn" id="criticalCount">—</div></div>
+  </section>
+  <section class="grid">
+    <div class="panel"><h2>☑️ Cumplimiento contractual</h2><div class="muted">Agosto 2026 · 94%</div><div class="bar" style="margin:14px 0"><i></i></div><div class="muted">42 entregas realizadas · 3 pendientes · 2 parciales</div></div>
+    <div class="panel"><h2>🚦 Alertas</h2><div class="alert"><b>Stock crítico</b><span id="criticalNames">Cargando…</span></div><div class="alert"><b>Entregas pendientes</b>3 entregas pendientes</div><div class="alert"><b>Entregas parciales</b>2 entregas parciales</div></div>
+  </section>
+  <section class="panel" id="productsPanel" style="margin-top:16px">
+    <h2>🧴 Productos · datos reales</h2><div class="muted" style="margin-bottom:12px">Conectado a Supabase</div>
+    <table class="table"><thead><tr><th>Código</th><th>Producto</th><th>Presentación</th><th>Unidad</th><th>Stock mínimo</th><th>Estado</th></tr></thead><tbody id="products"><tr><td colspan="6">Cargando productos…</td></tr></tbody></table>
+  </section>
+</main></div>
+<script>
+const SUPABASE_URL="https://mgevgpfwwonbcacrhwvr.supabase.co";
+const SUPABASE_KEY="sb_publishable_4b5_lGpJJVPDbwMdT3QRdA_cwoWvtnz";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+async function load(){
+ const {data,error}=await db.from("products").select("code,name,presentation,unit,min_stock,active").order("name");
+ const el=document.getElementById("products");
+ if(error){el.innerHTML=`<tr><td colspan="6">Error al cargar: ${error.message}</td></tr>`;return}
+ el.innerHTML=data.map(p=>`<tr><td>${p.code||""}</td><td>${p.name||""}</td><td>${p.presentation||""}</td><td>${p.unit||""}</td><td>${p.min_stock??0}</td><td><span class="badge">${p.active?"Activo":"Inactivo"}</span></td></tr>`).join("");
+ document.getElementById("criticalCount").textContent="—";
+ document.getElementById("criticalNames").textContent="Los mínimos están configurados; el stock físico se conectará en el siguiente bloque.";
+}
+load();
+document.getElementById("productsBtn").onclick=()=>document.getElementById("productsPanel").scrollIntoView({behavior:"smooth"});
+</script>
+</body></html>
